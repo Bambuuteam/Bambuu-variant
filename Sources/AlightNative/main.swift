@@ -2,8 +2,11 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        MetalView()
-            .frame(width: 400, height: 300)
+        ZStack {
+            MetalView()
+            RiveHostView()
+        }
+        .frame(width: 400, height: 300)
     }
 }
 
