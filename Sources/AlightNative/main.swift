@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        Text("AlightNative — Task 0")
+        MetalView()
             .frame(width: 400, height: 300)
     }
 }
