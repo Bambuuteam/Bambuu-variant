@@ -1,4 +1,10 @@
 import SwiftUI
+import Foundation
+
+if ProcessInfo.processInfo.environment["RUN_MATH_TESTS"] != nil {
+    runMathTests()
+    exit(0)
+}
 
 struct ContentView: View {
     var body: some View {
