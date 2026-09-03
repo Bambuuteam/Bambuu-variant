@@ -31,7 +31,8 @@ public struct KeyframeTrack: Sendable {
         let tNext = next.time.toDouble
         let denom = tNext - tPrev
         if denom == 0 {
-            fatalError("KeyframeTrack: adjacent keyframes share identical time")
+            // Degenerate span (e.g. zero-duration clip): hold previous value, never crash.
+            return prev.value
         }
         let t = (tDouble - tPrev) / denom
         let easedT = prev.easing.evaluate(at: t)
