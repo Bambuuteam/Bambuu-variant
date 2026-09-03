@@ -13,9 +13,9 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            // AGENT C INTEGRATION POINT: replace this placeholder with
-            // PreviewView(timeline:) from feature/metal-renderer.
-            MetalView()
+            // Live preview: resolves timeline clips at the playhead via
+            // MetalCompositor (feature/metal-renderer).
+            PreviewView(timeline: timeline)
                 .frame(maxWidth: .infinity)
                 .aspectRatio(16.0 / 9.0, contentMode: .fit)
             HSplitView {
