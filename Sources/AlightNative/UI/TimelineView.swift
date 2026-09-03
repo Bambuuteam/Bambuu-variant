@@ -1,5 +1,8 @@
 import SwiftUI
 
+// Ruler + lanes. Two separate time indicators (FCP-style):
+// - playhead (red): the edit point. Moves on drag/tap/playback only.
+// - skimmer (yellow beam): follows the mouse on hover, preview only.
 @MainActor
 struct TimelineView: View {
     @Bindable var timeline: Timeline
@@ -14,9 +17,18 @@ struct TimelineView: View {
         return end >= 0 ? Array(0...end) : []
     }
 
+    private func fraction(atX x: CGFloat, width: CGFloat) -> Fraction {
+        let frac = min(max(x / max(width, 1), 0), 1)
+        return Fraction(Int64(frac * totalSeconds * 1000), 1000)
+    }
+
+    private func xPosition(of time: Fraction, width: CGFloat) -> CGFloat {
+        width * time.toDouble / totalSeconds
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Ruler: 1-second ticks, drag to scrub (writes Fraction).
+            // Ruler: ticks + red playhead + yellow hover beam.
             GeometryReader { geo in
                 ZStack(alignment: .topLeading) {
                     Rectangle().fill(Color.gray.opacity(0.15))
@@ -29,26 +41,42 @@ struct TimelineView: View {
                             .font(.caption2)
                             .position(x: geo.size.width * Double(s) / totalSeconds + 12, y: 6)
                     }
-                    // Playhead
+                    if let skim = timeline.skimmer {
+                        Rectangle()
+                            .fill(Color.yellow)
+                            .frame(width: 1, height: geo.size.height)
+                            .position(x: xPosition(of: skim, width: geo.size.width),
+                                      y: geo.size.height / 2)
+                    }
                     Rectangle()
                         .fill(Color.red)
                         .frame(width: 2, height: geo.size.height)
-                        .position(x: geo.size.width * timeline.playhead.toDouble / totalSeconds,
+                        .position(x: xPosition(of: timeline.playhead, width: geo.size.width),
                                   y: geo.size.height / 2)
                 }
                 .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let location):
+                        timeline.skimmer = fraction(atX: location.x, width: geo.size.width)
+                    case .ended:
+                        timeline.skimmer = nil
+                    @unknown default:
+                        timeline.skimmer = nil
+                    }
+                }
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            let frac = min(max(value.location.x / max(geo.size.width, 1), 0), 1)
-                            let seconds = frac * totalSeconds
-                            timeline.playhead = Fraction(Int64(seconds * 1000), 1000)
+                            timeline.playhead = fraction(atX: value.location.x, width: geo.size.width)
                         }
                 )
+                // Note: tap-to-place is covered by DragGesture(minimumDistance: 0),
+                // which fires on press; hover stays separate via onContinuousHover.
             }
             .frame(height: 28)
 
-            // One lane per track, clips as rects, tap to select.
+            // One lane per track: clips, red playhead, yellow beam.
             ForEach(timeline.tracks) { track in
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -62,10 +90,27 @@ struct TimelineView: View {
                                 .position(x: x + max(w, 4) / 2, y: 20)
                                 .onTapGesture { selectedClip = clip }
                         }
+                        if let skim = timeline.skimmer {
+                            Rectangle()
+                                .fill(Color.yellow)
+                                .frame(width: 1, height: 40)
+                                .position(x: xPosition(of: skim, width: geo.size.width), y: 20)
+                        }
                         Rectangle()
                             .fill(Color.red)
                             .frame(width: 2, height: 40)
-                            .position(x: geo.size.width * timeline.playhead.toDouble / totalSeconds, y: 20)
+                            .position(x: xPosition(of: timeline.playhead, width: geo.size.width), y: 20)
+                    }
+                    .contentShape(Rectangle())
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let location):
+                            timeline.skimmer = fraction(atX: location.x, width: geo.size.width)
+                        case .ended:
+                            timeline.skimmer = nil
+                        @unknown default:
+                            timeline.skimmer = nil
+                        }
                     }
                 }
                 .frame(height: 40)
