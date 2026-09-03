@@ -7,7 +7,8 @@ if ProcessInfo.processInfo.environment["RUN_MATH_TESTS"] != nil {
 }
 
 struct ContentView: View {
-    @State private var timeline = Timeline()
+    @State private var timeline = Timeline(playhead: .zero, inPoint: .zero,
+                                            outPoint: Fraction(10, 1))
     @State private var selectedClip: VideoClip?
 
     var body: some View {

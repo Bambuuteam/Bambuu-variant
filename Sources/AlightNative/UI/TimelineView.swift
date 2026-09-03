@@ -6,7 +6,7 @@ struct TimelineView: View {
     @Binding var selectedClip: VideoClip?
 
     private var totalSeconds: Double {
-        max(timeline.outPoint.toDouble, 0.001)
+        max(timeline.outPoint.toDouble, 1.0)
     }
 
     private var tickSeconds: [Int] {
