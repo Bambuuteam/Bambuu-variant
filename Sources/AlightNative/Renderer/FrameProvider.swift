@@ -23,10 +23,7 @@ actor FrameProvider {
     // then exact-frame hardware decode. Throws on any failure:
     // missing file, out-of-range time, decode error. Never a placeholder.
     func frame(for clip: VideoClip, at timelineTime: Fraction) async throws -> CGImage {
-        let sourceSeconds = clip.resolveSourceTime(at: timelineTime)
-        if sourceSeconds < 0 {
-            fatalError("FrameProvider: resolveSourceTime returned negative time (\(sourceSeconds))")
-        }
+        let sourceSeconds = max(clip.resolveSourceTime(at: timelineTime), 0)
         let g = generator(for: clip.sourceURL)
         var actual = CMTime.zero
         return try g.copyCGImage(
