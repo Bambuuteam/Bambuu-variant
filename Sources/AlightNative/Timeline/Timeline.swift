@@ -5,6 +5,7 @@ import Observation
 final class Timeline: @unchecked Sendable {
     var tracks: [Track]
     var playhead: Fraction
+    var skimmer: Fraction?
     var inPoint: Fraction
     var outPoint: Fraction
 
