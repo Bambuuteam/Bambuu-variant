@@ -13,6 +13,13 @@ public struct KeyframeTrack: Sendable {
         keyframes.insert(keyframe, at: idx)
     }
 
+    public mutating func setValue(_ value: Double, at time: Fraction) {
+        guard let idx = keyframes.firstIndex(where: { $0.time == time }) else {
+            fatalError("KeyframeTrack.setValue: no keyframe at \(time.numerator)/\(time.denominator)")
+        }
+        keyframes[idx].value = value
+    }
+
     public func evaluate(at time: Fraction) -> Double {
         if keyframes.isEmpty { return 0.0 }
         if time <= keyframes[0].time { return keyframes[0].value }
