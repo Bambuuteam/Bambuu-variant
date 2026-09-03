@@ -7,9 +7,23 @@ if ProcessInfo.processInfo.environment["RUN_MATH_TESTS"] != nil {
 }
 
 struct ContentView: View {
+    @State private var timeline = Timeline()
+    @State private var selectedClip: VideoClip?
+
     var body: some View {
-        MetalView()
-            .frame(width: 400, height: 300)
+        VStack {
+            // AGENT C INTEGRATION POINT: replace this placeholder with
+            // PreviewView(timeline:) from feature/metal-renderer.
+            MetalView()
+                .frame(maxWidth: .infinity)
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+            HSplitView {
+                TimelineView(timeline: timeline, selectedClip: $selectedClip)
+                    .frame(minWidth: 400)
+                InspectorView(selectedClip: $selectedClip)
+            }
+        }
+        .padding()
     }
 }
 
