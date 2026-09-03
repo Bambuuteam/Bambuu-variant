@@ -9,6 +9,9 @@ struct VideoClip: TimelineItem, Sendable {
 
     init(id: UUID = UUID(), startTime: Fraction, duration: Fraction,
          sourceURL: URL, properties: [String: Property] = [:]) {
+        if duration <= .zero {
+            fatalError("VideoClip requires positive duration (got \(duration.numerator)/\(duration.denominator))")
+        }
         self.id = id
         self.startTime = startTime
         self.duration = duration
