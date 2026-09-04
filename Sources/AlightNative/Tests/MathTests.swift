@@ -1,6 +1,6 @@
 import Foundation
 
-func runMathTests() {
+func runMathTests() async {
     // Test 1: Fraction(1,2) + Fraction(1,3) == Fraction(5,6)
     do {
         let result = Fraction(1, 2) + Fraction(1, 3)
@@ -66,7 +66,7 @@ func runMathTests() {
     // Test 7: VideoClip.make(from:) duration probe + corrupt file error handling
     do {
         let validURL = URL(fileURLWithPath: "/tmp/qa-clip.mp4")
-        if let clip = try? VideoClip.make(from: validURL) {
+        if let clip = try? await VideoClip.make(from: validURL) {
             if clip.duration.toDouble > 9.9 && clip.duration.toDouble < 10.1 {
                 print("PASS Test 7: VideoClip.make valid file duration ~10.0s (got \(clip.duration.toDouble))")
             } else {
@@ -78,7 +78,7 @@ func runMathTests() {
 
         let corruptURL = URL(fileURLWithPath: "/tmp/qa-corrupt.mp4")
         do {
-            _ = try VideoClip.make(from: corruptURL)
+            _ = try await VideoClip.make(from: corruptURL)
             print("FAIL Test 8: Corrupt file did not throw error")
         } catch {
             print("PASS Test 8: Corrupt file threw expected error: \(error.localizedDescription)")

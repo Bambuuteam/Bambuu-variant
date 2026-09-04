@@ -2,7 +2,7 @@ import SwiftUI
 import Foundation
 
 if ProcessInfo.processInfo.environment["RUN_MATH_TESTS"] != nil {
-    runMathTests()
+    await runMathTests()
     exit(0)
 }
 

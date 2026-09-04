@@ -105,7 +105,7 @@ struct TimelineView: View {
     private func handleDropOnEmpty(url: URL) {
         Task {
             do {
-                let clip = try VideoClip.make(from: url)
+                let clip = try await VideoClip.make(from: url)
                 var newTrack = Track()
                 newTrack.insert(clip)
                 timeline.tracks.append(newTrack)
@@ -182,9 +182,10 @@ struct TrackLaneView: View {
     }
 
     private func handleDrop(url: URL, at location: CGPoint, in width: CGFloat) {
+        let trackID = track.id
         Task {
             do {
-                let clip = try VideoClip.make(from: url)
+                let clip = try await VideoClip.make(from: url)
                 let startTime = fraction(location.x, width)
                 var placedClip = VideoClip(
                     id: clip.id,
@@ -193,10 +194,11 @@ struct TrackLaneView: View {
                     sourceURL: clip.sourceURL,
                     properties: clip.properties
                 )
-                // Overlap handling: snap to after the last clip if overlapping
-                var trackCopy = track
-                if trackCopy.clips.contains(where: { $0.startTime < placedClip.endTime && placedClip.startTime < $0.endTime }) {
-                    let lastEnd = trackCopy.clips.map { $0.endTime }.max() ?? .zero
+                // Look up live track directly from timeline to avoid stale value copy races
+                guard let idx = timeline.tracks.firstIndex(where: { $0.id == trackID }) else { return }
+                var liveTrack = timeline.tracks[idx]
+                if liveTrack.clips.contains(where: { $0.startTime < placedClip.endTime && placedClip.startTime < $0.endTime }) {
+                    let lastEnd = liveTrack.clips.map { $0.endTime }.max() ?? .zero
                     placedClip = VideoClip(
                         id: clip.id,
                         startTime: lastEnd,
@@ -205,12 +207,10 @@ struct TrackLaneView: View {
                         properties: clip.properties
                     )
                 }
-                trackCopy.insert(placedClip)
-                if let idx = timeline.tracks.firstIndex(where: { $0.id == track.id }) {
-                    timeline.tracks[idx] = trackCopy
-                    if timeline.outPoint < placedClip.endTime {
-                        timeline.outPoint = placedClip.endTime
-                    }
+                liveTrack.insert(placedClip)
+                timeline.tracks[idx] = liveTrack
+                if timeline.outPoint < placedClip.endTime {
+                    timeline.outPoint = placedClip.endTime
                 }
             } catch {
                 onImportError?(error.localizedDescription)
