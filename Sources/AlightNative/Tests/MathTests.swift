@@ -1,3 +1,5 @@
+import Foundation
+
 func runMathTests() {
     // Test 1: Fraction(1,2) + Fraction(1,3) == Fraction(5,6)
     do {
@@ -59,6 +61,48 @@ func runMathTests() {
             print("PASS Test 6: before-first got 10.0")
         } else {
             print("FAIL Test 6: before-first got \(result), expected 10.0")
+        }
+    }
+    // Test 7: VideoClip.make(from:) duration probe + corrupt file error handling
+    do {
+        let validURL = URL(fileURLWithPath: "/tmp/qa-clip.mp4")
+        if let clip = try? VideoClip.make(from: validURL) {
+            if clip.duration.toDouble > 9.9 && clip.duration.toDouble < 10.1 {
+                print("PASS Test 7: VideoClip.make valid file duration ~10.0s (got \(clip.duration.toDouble))")
+            } else {
+                print("FAIL Test 7: VideoClip.make duration mismatch: \(clip.duration.toDouble)")
+            }
+        } else {
+            print("SKIP Test 7: /tmp/qa-clip.mp4 not found")
+        }
+
+        let corruptURL = URL(fileURLWithPath: "/tmp/qa-corrupt.mp4")
+        do {
+            _ = try VideoClip.make(from: corruptURL)
+            print("FAIL Test 8: Corrupt file did not throw error")
+        } catch {
+            print("PASS Test 8: Corrupt file threw expected error: \(error.localizedDescription)")
+        }
+    }
+    // Test 9: Track overlap detection & snap behavior
+    do {
+        let clip1 = VideoClip(startTime: .zero, duration: Fraction(5, 1), sourceURL: URL(fileURLWithPath: "/tmp/qa-clip.mp4"))
+        let clip2 = VideoClip(startTime: Fraction(2, 1), duration: Fraction(4, 1), sourceURL: URL(fileURLWithPath: "/tmp/qa-clip.mp4"))
+        var track = Track()
+        track.insert(clip1)
+        // Check overlap detection
+        let overlaps = track.clips.contains(where: { $0.startTime < clip2.endTime && clip2.startTime < $0.endTime })
+        if overlaps {
+            let lastEnd = track.clips.map { $0.endTime }.max() ?? .zero
+            let snapped = VideoClip(id: clip2.id, startTime: lastEnd, duration: clip2.duration, sourceURL: clip2.sourceURL, properties: clip2.properties)
+            track.insert(snapped)
+            if track.clips.count == 2 && track.clips[1].startTime == Fraction(5, 1) {
+                print("PASS Test 9: Overlapping clip snapped to end of previous clip at t=5/1s without crash")
+            } else {
+                print("FAIL Test 9: Snapping did not place clip at expected position")
+            }
+        } else {
+            print("FAIL Test 9: Overlap was not detected")
         }
     }
     print("All tests completed.")

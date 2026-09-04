@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 
 struct VideoClip: TimelineItem, Sendable {
     let id: UUID
@@ -23,6 +24,19 @@ struct VideoClip: TimelineItem, Sendable {
         track.insert(Keyframe(time: duration, value: duration.toDouble, easing: .linear))
         let def = Property(name: "timeRemap", baseValue: 0.0, track: track)
         self.properties = properties.merging(["timeRemap": def], uniquingKeysWith: { supplied, _ in supplied })
+    }
+
+    // Shared factory: probes actual media duration via AVFoundation.
+    // Throws on unreadable/corrupt/non-video files.
+    static func make(from url: URL) throws -> VideoClip {
+        let asset = AVURLAsset(url: url)
+        let secs = CMTimeGetSeconds(asset.duration)
+        guard secs.isFinite, secs > 0 else {
+            throw NSError(domain: "VideoClip", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Unreadable or zero-duration video: \(url.lastPathComponent)"])
+        }
+        let dur = Fraction(Int64(secs * 1000), 1000)
+        return VideoClip(startTime: .zero, duration: dur, sourceURL: url)
     }
 
     // Timeline-local time -> source seconds via the timeRemap curve.
