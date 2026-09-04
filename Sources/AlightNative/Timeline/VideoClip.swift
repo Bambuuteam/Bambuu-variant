@@ -28,9 +28,10 @@ struct VideoClip: TimelineItem, Sendable {
 
     // Shared factory: probes actual media duration via AVFoundation.
     // Throws on unreadable/corrupt/non-video files.
-    static func make(from url: URL) throws -> VideoClip {
+    static func make(from url: URL) async throws -> VideoClip {
         let asset = AVURLAsset(url: url)
-        let secs = CMTimeGetSeconds(asset.duration)
+        let cmDuration = try await asset.load(.duration)
+        let secs = CMTimeGetSeconds(cmDuration)
         guard secs.isFinite, secs > 0 else {
             throw NSError(domain: "VideoClip", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Unreadable or zero-duration video: \(url.lastPathComponent)"])
