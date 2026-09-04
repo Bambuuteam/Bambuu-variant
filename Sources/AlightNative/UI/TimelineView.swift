@@ -24,6 +24,7 @@ struct TimelineView: View {
   @State private var selectMode: SelectionMode = .select
   @State private var textMode: TextMode = .text
   @State private var shapeKind: ShapeKind = .square
+  @State private var shapeColor = Color(nsColor: .systemBlue)
   @State private var selectedSwatchIndex = 0
   @State private var snapOptions: Set<SnapOption> = Set(SnapOption.allCases)
   @State private var isPointerInsideTimeline = false
@@ -159,21 +160,41 @@ struct TimelineView: View {
         }
 
         if let activePopover {
-          ToolPopoverPanel(
-            kind: activePopover,
-            selectMode: $selectMode,
-            textMode: $textMode,
-            shapeKind: $shapeKind,
-            selectedSwatchIndex: $selectedSwatchIndex,
-            snapOptions: $snapOptions
-          )
-          .frame(width: 236)
-          .position(
-            x: 20 + 40 + 12 + 118,
-            y: popoverY(for: activePopover, in: geometry.size.height)
-          )
-          .transition(.move(edge: .leading).combined(with: .opacity))
-          .zIndex(2)
+          if activePopover == .shape {
+            ShapePopoverView(
+              shapeKind: $shapeKind,
+              shapeColor: $shapeColor,
+              onSelect: {
+                withAnimation(.easeOut(duration: 0.18)) {
+                  self.activePopover = nil
+                }
+              }
+            )
+            .animation(.easeOut(duration: 0.18), value: activePopover)
+            .frame(width: 180)
+            .position(
+              x: 20 + 40 + 12 + 90,
+              y: popoverY(for: activePopover, in: geometry.size.height)
+            )
+            .transition(.move(edge: .leading).combined(with: .opacity))
+            .zIndex(2)
+          } else {
+            ToolPopoverPanel(
+              kind: activePopover,
+              selectMode: $selectMode,
+              textMode: $textMode,
+              shapeKind: $shapeKind,
+              selectedSwatchIndex: $selectedSwatchIndex,
+              snapOptions: $snapOptions
+            )
+            .frame(width: 236)
+            .position(
+              x: 20 + 40 + 12 + 118,
+              y: popoverY(for: activePopover, in: geometry.size.height)
+            )
+            .transition(.move(edge: .leading).combined(with: .opacity))
+            .zIndex(2)
+          }
         }
 
         Group {
@@ -902,7 +923,7 @@ private enum TextMode: String, CaseIterable, Identifiable {
   }
 }
 
-private enum ShapeKind: String, CaseIterable, Identifiable {
+enum ShapeKind: String, CaseIterable, Identifiable {
   case square = "Square"
   case circle = "Circle"
   case star = "Star"
@@ -980,7 +1001,7 @@ private struct PrimaryToolbar: View {
   ) -> some View {
     toolButton(tool, systemImage: systemImage, help: help) {
       activeTool = tool
-      withAnimation(.easeOut(duration: 0.16)) {
+      withAnimation(.easeOut(duration: popover == .shape ? 0.18 : 0.16)) {
         activePopover = activePopover == popover ? nil : popover
       }
     }
