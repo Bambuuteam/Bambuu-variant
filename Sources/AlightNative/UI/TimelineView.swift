@@ -186,7 +186,7 @@ struct TimelineView: View {
                 }
               },
               onForward: {
-                isVectorEditing = true
+                isVectorEditing = false
               }
             )
           } else {
@@ -523,7 +523,7 @@ private struct ClipBlockView: View {
           )
         }
       }
-      .overlay(EditorTheme.selection.opacity(isSelected ? 0.12 : 0.32))
+      .overlay(EditorTheme.selection.opacity(isSelected ? 0.32 : 0.12))
 
       Text(clip.sourceURL.lastPathComponent)
         .font(.system(size: 9, weight: .medium))
